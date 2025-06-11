@@ -86,42 +86,51 @@ class SelûneDeliverySystem:
             print(f"❌ Email monitoring error: {e}")
             return []
     
-    def parse_payment_email(self, email_message):
-        """Extract customer and payment info from email"""
-        try:
-            subject = email_message['Subject'] or ''
-            body = self.get_email_body(email_message)
-            sender = email_message['From']
-            
-            # Look for payment indicators
-            payment_keywords = ['paypal', 'payment', 'paid', '$', 'receipt', 'confirmation']
-            
-            if any(keyword in subject.lower() or keyword in body.lower() 
-                   for keyword in payment_keywords):
-                
-                # Extract payment amount if possible
-                amount_match = re.search(r'\$(\d+\.?\d*)', body)
-                amount = amount_match.group(1) if amount_match else "unknown"
-                
-                customer_info = {
-                    'email': sender,
-                    'timestamp': datetime.now().isoformat(),
-                    'amount': amount,
-                    'subject': subject,
-                    'payment_method': 'PayPal',
-                    'delivery_status': 'pending'
-                }
-                
-                # Save customer to database
-                self.save_customer(customer_info)
-                return customer_info
-                
-        except Exception as e:
-            print(f"⚠️ Email parsing error: {e}")
-            
-        return None
     
-    def get_email_body(self, email_message):
+def parse_payment_email(self, email_message):
+    """Extract customer and payment info from email"""
+    try:
+        subject = email_message['Subject'] or ''
+        body = self.get_email_body(email_message)
+        sender = self.extract_email_from_body(body) or email_message['From']
+        print(f"🔎 Extracted sender: {sender}")
+
+        # Look for payment indicators
+        payment_keywords = ['paypal', 'payment', 'paid', '$', 'receipt', 'confirmation']
+
+        if any(keyword in subject.lower() or keyword in body.lower() 
+               for keyword in payment_keywords):
+
+            # Extract payment amount if possible
+            amount_match = re.search(r'\$(\d+\.?\d*)', body)
+            amount = amount_match.group(1) if amount_match else "unknown"
+
+            customer_info = {
+                'email': sender,
+                'timestamp': datetime.now().isoformat(),
+                'amount': amount,
+                'subject': subject,
+                'payment_method': 'PayPal',
+                'delivery_status': 'pending'
+            }
+
+            # Save customer to database
+            self.save_customer(customer_info)
+            return customer_info
+
+    except Exception as e:
+        print(f"⚠️ Email parsing error: {e}")
+
+    return None
+
+    
+    def extract_email_from_body(self, body):
+        """Extract first valid email address from body text"""
+        matches = re.findall(r'[\w\.-]+@[\w\.-]+', body)
+        return matches[0] if matches else None
+
+    def get_email_body
+(self, email_message):
         """Extract text body from email message"""
         body = ""
         if email_message.is_multipart():
